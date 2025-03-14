@@ -1,6 +1,6 @@
+import { player } from '@/lib/player';
 import { joinVoiceChannel } from '@discordjs/voice';
 import type { VoiceBasedChannel } from 'discord.js';
-import { player } from './player';
 
 export const joinChannel = (channel: VoiceBasedChannel) => {
   const voiceChannel = joinVoiceChannel({

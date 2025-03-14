@@ -10,6 +10,7 @@
     "dev": "bun run --inspect --watch src/client.ts",
     "build": "bun build src/**/*.ts --outdir ./build --target=bun",
     "dev:deploy": "bun run src/deploy.ts",
+    "start": "bun build/src/client.js",
     "test": "bun test",
     "lint": "eslint . --ext .ts",
     "format": "prettier --write ."
