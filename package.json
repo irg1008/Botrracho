@@ -6,6 +6,7 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
+  "packageManager": "bun@1.1.43",
   "scripts": {
     "dev": "bun run --inspect --watch src/client.ts",
     "build": "bun build src/**/*.ts --outdir ./build --target=bun",
