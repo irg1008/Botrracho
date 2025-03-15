@@ -6,7 +6,6 @@ import type { ButtonExecute, Command, CommandExecute } from '@/types/discord';
 import {
   ActionRowBuilder,
   ButtonBuilder,
-  ButtonComponent,
   ButtonStyle,
   SlashCommandBuilder,
 } from 'discord.js';
@@ -48,7 +47,7 @@ const executeListAudios: CommandExecute = async (interaction) => {
 };
 
 const executePlayAudio: ButtonExecute = async (interaction) => {
-  if (!(interaction.component instanceof ButtonComponent)) return;
+  if (!('customId' in interaction.component)) return;
 
   const { customId } = interaction.component;
   if (!customId) {

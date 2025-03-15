@@ -1,8 +1,8 @@
+import { env } from '@/config/env';
 import { createAudioResource } from '@discordjs/voice';
 import {
   type ButtonInteraction,
   type ChatInputCommandInteraction,
-  GuildMember,
 } from 'discord.js';
 import { Readable } from 'node:stream';
 import { ReadableStream } from 'node:stream/web';
@@ -10,6 +10,8 @@ import { joinChannel } from './channel';
 import { filename } from './path';
 import { player } from './player';
 import { s3 } from './s3';
+
+export const keysCache = new Map<string, string>();
 
 export const listAudioNames = async () => {
   const audios = await s3.list();
@@ -20,13 +22,31 @@ export const listAudioNames = async () => {
   return audioNames;
 };
 
-export const getAudio = async (name: string) => {
+export const getAudioKey = async (audioName: string) => {
+  const cacheHit = keysCache.get(audioName);
+  if (cacheHit) return cacheHit;
+
   const audios = await s3.list({
-    Prefix: `${name}.`, // Be wary of the dot at the end
+    Prefix: `${audioName}.`, // Be wary of the dot at the end
     MaxKeys: 1,
   });
 
   const audioKey = audios.Contents?.[0]?.Key;
+  if (audioKey) keysCache.set(audioName, audioKey);
+
+  return audioKey;
+};
+
+export const getAudioURLResource = async (name: string) => {
+  const audioKey = await getAudioKey(name);
+  if (!audioKey) return;
+
+  const url = `${env.s3PublicUrl}/${audioKey}`;
+  return createAudioResource(url);
+};
+
+export const getAudioResource = async (name: string) => {
+  const audioKey = await getAudioKey(name);
   if (!audioKey) return;
 
   const audio = await s3.get({ Key: audioKey });
@@ -41,8 +61,12 @@ export const playAudioForInteraction = async (
   interaction: ChatInputCommandInteraction | ButtonInteraction,
   audioName: string
 ) => {
+  if (!interaction.deferred) {
+    await interaction.deferReply();
+  }
+
   try {
-    const audio = await getAudio(audioName);
+    const audio = await getAudioURLResource(audioName);
     if (!audio) {
       await interaction.editReply(
         `No se ha encontrado el audio '${audioName}'`
@@ -50,7 +74,7 @@ export const playAudioForInteraction = async (
       return;
     }
 
-    if (!(interaction.member instanceof GuildMember)) {
+    if (!interaction.member || !('voice' in interaction.member)) {
       await interaction.editReply('No se ha podido obtener el miembro');
       return;
     }

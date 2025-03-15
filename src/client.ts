@@ -1,6 +1,5 @@
 import { env } from '@/config/env';
 import {
-  ButtonComponent,
   Client,
   Events,
   GatewayIntentBits,
@@ -57,11 +56,7 @@ client.on(Events.InteractionCreate, (interaction) => {
 });
 
 client.on(Events.InteractionCreate, async (interaction) => {
-  if (
-    !interaction.isButton() ||
-    !(interaction.component instanceof ButtonComponent)
-  )
-    return;
+  if (!interaction.isButton() || !('customId' in interaction.component)) return;
 
   const { customId } = interaction.component;
   if (!customId) return;

@@ -1,12 +1,14 @@
 {
   "extends": "@tsconfig/bun/tsconfig.json",
   "compilerOptions": {
-    "module": "esnext",
-    "baseUrl": ".",
+    "outDir": "build",
+    "baseUrl": "src",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["*"]
     },
     "strict": true,
     "typeRoots": ["./types"]
-  }
+  },
+  "include": ["src", "types"],
+  "exclude": ["node_modules", "build"]
 }

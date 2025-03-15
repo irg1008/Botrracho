@@ -5,6 +5,7 @@ declare namespace NodeJS {
     GUILD_ID: string;
     S3_REGION: string;
     S3_ENDPOINT: string;
+    S3_PUBLIC_URL: string;
     S3_BUCKET: string;
     S3_KEY_ID: string;
     S3_SECRET_KEY: string;
