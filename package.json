@@ -11,10 +11,12 @@
   "scripts": {
     "dev": "bun run --watch src/client.ts",
     "debug": "bun run --inspect --watch src/client.ts",
-    "build": "bun build --root src --entrypoints src/**/*.ts --outdir build --sourcemap=external --target bun --env-file .env",
+    "build": "bun build --root src --entrypoints src/**/*.ts --outdir build --sourcemap=external --target node",
     "dev:deploy": "bun run src/deploy.ts",
     "deploy": "bun run build/deploy.js",
     "start": "bun run build/client.js",
+    "d:build": "docker build -t botrracho .",
+    "d:run": "docker run -d botrracho --env-file .env",
     "test": "bun test",
     "lint": "eslint . --ext .ts",
     "format": "prettier --write ."
