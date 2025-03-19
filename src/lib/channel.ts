@@ -22,10 +22,12 @@ export const joinChannelWithPlayer = (channel: VoiceBasedChannel) => {
   const conn = joinChannel(channel);
   if ('subscription' in conn.state) return conn.state.subscription?.player;
 
-  const player = conn.subscribe(createPlayer(channel.guildId))?.player;
+  const player = createPlayer(channel.guildId);
+  conn.subscribe(player);
 
+  console.info('Starting voice activation listener');
   listAudioNames();
-  detectVoiceActivation(conn.receiver, async (audioName) => {
+  detectVoiceActivation(conn.receiver, player, async (audioName) => {
     console.log('Playing audio for voice command', audioName);
     const audio = await getAudioURLResource(audioName);
     if (audio) player?.play(audio);

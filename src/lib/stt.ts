@@ -1,4 +1,9 @@
-import { EndBehaviorType, VoiceReceiver } from '@discordjs/voice';
+import {
+  AudioPlayer,
+  AudioPlayerStatus,
+  EndBehaviorType,
+  VoiceReceiver,
+} from '@discordjs/voice';
 import {
   AutomaticSpeechRecognitionPipeline,
   pipeline,
@@ -78,10 +83,20 @@ export const resolveReceiverData = (
       const wavBuffer = pcmToWavBuffer(inputAudio);
       resolve(wavBuffer);
     });
+
+    opusDecoder.on('error', (error) => {
+      console.error('Error decoding audio. Trying to recover', error);
+      opusDecoder.destroy();
+      opusStream.destroy();
+      resolveReceiverData(receiver, userId);
+    });
   });
 };
 
-export const transcribeReceiverData = (receiver: VoiceReceiver) => {
+export const transcribeReceiverData = (
+  receiver: VoiceReceiver,
+  player: AudioPlayer
+) => {
   if (!transcriber) {
     console.error('Transcriber not initialized');
     return;
@@ -92,6 +107,14 @@ export const transcribeReceiverData = (receiver: VoiceReceiver) => {
   }>();
 
   receiver.speaking.on('start', async (userId) => {
+    const isPlaying = player.state.status === AudioPlayerStatus.Playing;
+    if (isPlaying) {
+      console.info('Audio is playing, ignoring voice activation');
+      return;
+    }
+
+    console.info(`User ${userId} started speaking`);
+
     const data = await resolveReceiverData(receiver, userId);
 
     const wav = new wavefile.WaveFile(data);
@@ -133,14 +156,16 @@ const commandRegex = new RegExp(
 
 export const detectVoiceActivation = (
   receiver: VoiceReceiver,
+  player: AudioPlayer,
   onAudioMatch: (name: string) => void
 ) => {
-  const transcriberEvents = transcribeReceiverData(receiver);
+  const transcriberEvents = transcribeReceiverData(receiver, player);
 
   transcriberEvents?.on('transcription', async (text) => {
     console.debug(`Transcription: ${text}`);
 
-    const match = text.trim().match(commandRegex);
+    const clearText = text.trim().replace(/[^a-zA-Z0-9\s]/g, '');
+    const match = clearText.match(commandRegex);
     if (!match) return;
 
     const [_, _command, audioName] = match;
