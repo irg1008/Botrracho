@@ -6,18 +6,22 @@ import {
 } from 'discord.js';
 import { Readable } from 'node:stream';
 import { ReadableStream } from 'node:stream/web';
-import { joinChannel } from './channel';
+import { joinChannelWithPlayer } from './channel';
 import { filename } from './path';
-import { player } from './player';
 import { s3 } from './s3';
 
 export const keysCache = new Map<string, string>();
 
 export const listAudioNames = async () => {
   const audios = await s3.list();
+
   const audioNames = audios.Contents?.map((audio) => audio.Key)
     .filter((key) => typeof key === 'string')
-    .map(filename);
+    .map((key) => {
+      const name = filename(key);
+      keysCache.set(name, key);
+      return name;
+    });
 
   return audioNames;
 };
@@ -85,8 +89,8 @@ export const playAudioForInteraction = async (
       return;
     }
 
-    joinChannel(channel);
-    player.play(audio);
+    const player = joinChannelWithPlayer(channel);
+    player?.play(audio);
   } catch (error) {
     await interaction.editReply(`No se ha encontrado el audio '${audioName}'`);
     throw error;

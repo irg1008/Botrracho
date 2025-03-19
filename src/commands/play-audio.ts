@@ -30,7 +30,10 @@ const executePlayAudio: CommandExecute = async (interaction) => {
 
   await interaction.deferReply();
   await playAudioForInteraction(interaction, audioName);
-  await interaction.editReply(`Reproduciendo '${audioName}'`);
+
+  if (!interaction.replied) {
+    await interaction.editReply(`Reproduciendo '${audioName}'`);
+  }
 };
 
 const autocompleteAudioName: AutocompleteExecute = async (interaction) => {

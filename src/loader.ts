@@ -6,9 +6,9 @@ import path from 'node:path';
 export const commands = new Collection<string, Command>();
 
 const commandsPath = path.resolve(import.meta.dirname, 'commands');
-const commandFiles = fs
-  .readdirSync(commandsPath)
-  .filter((file) => file.endsWith('.js') || file.endsWith('.ts'));
+const commandFiles = fs.readdirSync(commandsPath).filter((file) => {
+  return file.endsWith('.js') || file.endsWith('.ts');
+});
 
 for (const file of commandFiles) {
   const filePath = path.join(commandsPath, file);

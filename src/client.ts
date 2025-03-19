@@ -7,11 +7,14 @@ import {
   type InteractionReplyOptions,
 } from 'discord.js';
 import { id } from './lib/id';
+import { createTranscriber } from './lib/stt';
 import { commands } from './loader';
 
 const client = new Client({
   intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildVoiceStates],
 });
+
+await createTranscriber();
 
 client.on(Events.ClientReady, (readyClient) => {
   console.log(`Logged in as ${readyClient.user.tag}!`);
@@ -55,6 +58,7 @@ client.on(Events.InteractionCreate, (interaction) => {
   }
 });
 
+// Button interactions
 client.on(Events.InteractionCreate, async (interaction) => {
   if (!interaction.isButton() || !('customId' in interaction.component)) return;
 
