@@ -24,8 +24,8 @@ export const createTranscriber = async () => {
 
 export const pcmToWavBuffer = (
   pcmBuffer: Buffer,
-  sampleRate: number = 48000,
-  numChannels: number = 2,
+  sampleRate: number = 16000,
+  numChannels: number = 1,
   bitDepth: number = 16
 ): Buffer => {
   const dataSize = pcmBuffer.length;
@@ -58,17 +58,17 @@ export const resolveReceiverData = (
   receiver: VoiceReceiver,
   userId: string
 ) => {
-  return new Promise<Buffer>((resolve) => {
-    const opusDecoder = new prism.opus.Decoder({
-      frameSize: 960,
-      channels: 2,
-      rate: 48000,
-    });
+  const opusDecoder = new prism.opus.Decoder({
+    frameSize: 480,
+    channels: 1,
+    rate: 16000,
+  });
 
+  return new Promise<Buffer>((resolve) => {
     const opusStream = receiver.subscribe(userId, {
       end: {
         behavior: EndBehaviorType.AfterSilence,
-        duration: 500,
+        duration: 200,
       },
     });
     opusStream.pipe(opusDecoder);
@@ -107,7 +107,9 @@ export const transcribeReceiverData = (
   }>();
 
   receiver.speaking.on('start', async (userId) => {
-    const isPlaying = player.state.status === AudioPlayerStatus.Playing;
+    const isPlaying =
+      player.state.status === AudioPlayerStatus.Playing ||
+      player.state.status === AudioPlayerStatus.Buffering;
     if (isPlaying) {
       console.info('Audio is playing, ignoring voice activation');
       return;
@@ -131,6 +133,8 @@ export const transcribeReceiverData = (
       max_length: 50,
       max_time: 2,
       use_cache: true,
+      force_full_sequences: true,
+      top_p: 0.85,
     });
 
     const output = Array.isArray(outputs) ? outputs[0] : outputs;
@@ -150,9 +154,16 @@ const validCommands = [
 ];
 const commandPattern = validCommands.join('|');
 const commandRegex = new RegExp(
-  `\\b(${commandPattern})\\s+([\\w\\s]+?)(?=\\s*[.,]|$)`,
+  `\\b(${commandPattern})\\s+([\\w\\sáéíóúüñÁÉÍÓÚÜÑ]+?)(?=\\s*[.,]|$)`,
   'i'
 );
+
+const clearText = (text: string) => {
+  return text
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+};
 
 export const detectVoiceActivation = (
   receiver: VoiceReceiver,
@@ -164,8 +175,12 @@ export const detectVoiceActivation = (
   transcriberEvents?.on('transcription', async (text) => {
     console.debug(`Transcription: ${text}`);
 
-    const clearText = text.trim().replace(/[^a-zA-Z0-9\s]/g, '');
-    const match = clearText.match(commandRegex);
+    const match = text
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-zA-Z0-9\sáéíóúüñÁÉÍÓÚÜÑ]/g, '')
+      .match(commandRegex);
+
     if (!match) return;
 
     const [_, _command, audioName] = match;
@@ -177,7 +192,7 @@ export const detectVoiceActivation = (
 
     const audioNameMatch = keysCache
       .keys()
-      .find((name) => name.toLowerCase().includes(audioName.toLowerCase()));
+      .find((name) => clearText(name).includes(clearText(audioName)));
 
     if (audioNameMatch) {
       onAudioMatch(audioNameMatch);
